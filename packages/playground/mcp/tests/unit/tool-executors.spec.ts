@@ -149,6 +149,34 @@ describe('createToolClient listEmails', () => {
 	});
 });
 
+describe('createToolClient run', () => {
+	// Multisite bootstrap looks the site up by REQUEST_URI, so PHP must run
+	// under the site's path, e.g. a playground.wordpress.net scope.
+	it('runs PHP with the site path as the request URI', async () => {
+		const run = vi.fn(async () => ({
+			bytes: new TextEncoder().encode('ok'),
+			errors: '',
+			exitCode: 0,
+		}));
+		const playgroundClient = {
+			absoluteUrl: Promise.resolve(
+				'https://playground.wordpress.net/scope:0.5'
+			),
+			run,
+		} as unknown as PlaygroundClient;
+
+		const result = await createToolClient(playgroundClient).run({
+			code: '<?php echo "ok";',
+		});
+
+		expect(result.text).toBe('ok');
+		expect(run).toHaveBeenCalledWith({
+			code: '<?php echo "ok";',
+			relativeUri: '/scope:0.5/',
+		});
+	});
+});
+
 function createStubToolClient(overrides: Partial<ToolClient>): ToolClient {
 	return {
 		run: async () => ({ text: '', errors: '', exitCode: 0 }),

@@ -253,7 +253,11 @@ export function createToolClient(client: PlaygroundClient): ToolClient {
 	const decoder = new TextDecoder();
 	const overrides: Partial<ToolClient> = {
 		async run(options) {
-			const resp = await client.run(options);
+			const { pathname } = new URL(await client.absoluteUrl);
+			const resp = await client.run({
+				...options,
+				relativeUri: pathname.replace(/\/?$/, '/'),
+			});
 			return {
 				text: decoder.decode(resp.bytes),
 				errors: resp.errors,
